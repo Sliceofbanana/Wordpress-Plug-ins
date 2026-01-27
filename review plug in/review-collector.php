@@ -1,5 +1,4 @@
 <?php
-<?php
 /**
  * Plugin Name: Simple Review Collector
  * Description: A simple plugin to collect and display reviews with ratings. Works with any page builder or classic editor.
