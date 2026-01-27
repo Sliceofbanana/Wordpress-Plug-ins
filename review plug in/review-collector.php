@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple Review Collector
  * Description: A simple plugin to collect and display reviews with ratings. Works with any page builder or classic editor.
- * Version: 1.0
+ * Version: 2.0
  * Author: Genesis Jr
  */
 
@@ -53,10 +53,11 @@ function src_enqueue_assets() {
 add_shortcode( 'review_form', 'src_form_shortcode' );
 function src_form_shortcode( $atts ) {
     $atts = shortcode_atts( array(
-        'layout' => 'card', // card or slider
+        'layout' => 'card', // card, carousel, or popup
         'show_form' => 'yes',
         'order' => 'newest', // newest or highest
-        'per_page' => 10
+        'per_page' => 10,
+        'button_text' => 'Leave a Review'
     ), $atts );
     
     ob_start();
@@ -64,18 +65,29 @@ function src_form_shortcode( $atts ) {
     // Get current page ID
     $page_id = get_the_ID();
     
-    // Display review form
-    if ( $atts['show_form'] === 'yes' ) {
-        src_display_form( $page_id );
+    // Display button for popup layout
+    if ( $atts['layout'] === 'popup' || $atts['layout'] === 'carousel' ) {
+        if ( $atts['show_form'] === 'yes' ) {
+            echo '<button class="src-open-popup-btn">' . esc_html( $atts['button_text'] ) . '</button>';
+        }
     }
     
     // Display reviews
     src_display_reviews( $page_id, $atts );
     
+    // Display form based on layout
+    if ( $atts['show_form'] === 'yes' ) {
+        if ( $atts['layout'] === 'popup' || $atts['layout'] === 'carousel' ) {
+            src_display_popup_form( $page_id );
+        } else {
+            src_display_form( $page_id );
+        }
+    }
+    
     return ob_get_clean();
 }
 
-// ✅ Display review form
+// ✅ Display inline review form
 function src_display_form( $page_id ) {
     ?>
     <div class="src-review-form-wrapper">
@@ -126,6 +138,60 @@ function src_display_form( $page_id ) {
     <?php
 }
 
+// ✅ Display popup review form
+function src_display_popup_form( $page_id ) {
+    ?>
+    <div id="src-review-popup" class="src-popup-overlay">
+        <div class="src-popup-content">
+            <button class="src-popup-close">&times;</button>
+            <h3>Leave a Review</h3>
+            <form id="src-review-form-popup" class="src-review-form" enctype="multipart/form-data">
+                <input type="hidden" name="page_id" value="<?php echo esc_attr( $page_id ); ?>">
+                <input type="hidden" name="action" value="src_submit_review">
+                <input type="hidden" name="nonce" value="<?php echo wp_create_nonce( 'src_nonce' ); ?>">
+                
+                <!-- Honeypot for spam protection -->
+                <input type="text" name="website" style="display:none;">
+                
+                <div class="src-form-group">
+                    <label for="reviewer_name_popup">Your Name *</label>
+                    <input type="text" id="reviewer_name_popup" name="reviewer_name" required>
+                </div>
+                
+                <div class="src-form-group">
+                    <label>Your Rating *</label>
+                    <div class="src-star-rating">
+                        <input type="radio" id="star5_popup" name="rating" value="5" required>
+                        <label for="star5_popup">★</label>
+                        <input type="radio" id="star4_popup" name="rating" value="4">
+                        <label for="star4_popup">★</label>
+                        <input type="radio" id="star3_popup" name="rating" value="3">
+                        <label for="star3_popup">★</label>
+                        <input type="radio" id="star2_popup" name="rating" value="2">
+                        <label for="star2_popup">★</label>
+                        <input type="radio" id="star1_popup" name="rating" value="1">
+                        <label for="star1_popup">★</label>
+                    </div>
+                </div>
+                
+                <div class="src-form-group">
+                    <label for="review_text_popup">Your Review *</label>
+                    <textarea id="review_text_popup" name="review_text" rows="5" required></textarea>
+                </div>
+                
+                <div class="src-form-group">
+                    <label for="review_photo_popup">Add Photo (Optional)</label>
+                    <input type="file" id="review_photo_popup" name="review_photo" accept="image/*">
+                </div>
+                
+                <button type="submit" class="src-submit-btn">Submit Review</button>
+                <div class="src-message"></div>
+            </form>
+        </div>
+    </div>
+    <?php
+}
+
 // ✅ Display reviews
 function src_display_reviews( $page_id, $atts ) {
     global $wpdb;
@@ -163,30 +229,40 @@ function src_display_reviews( $page_id, $atts ) {
         <div class="src-average-rating">
             <span class="src-rating-number"><?php echo number_format( $stats->average, 1 ); ?></span>
             <div class="src-stars"><?php echo src_render_stars( $stats->average ); ?></div>
-            <span class="src-total-reviews"><?php echo $stats->total; ?> reviews</span>
+            <span class="src-total-reviews"><?php echo $stats->total; ?> <?php echo $stats->total == 1 ? 'review' : 'reviews'; ?></span>
         </div>
     </div>
     
     <div class="src-reviews-container src-layout-<?php echo esc_attr( $atts['layout'] ); ?>">
-        <?php foreach ( $reviews as $review ) : ?>
-            <div class="src-review-card">
-                <?php if ( $review->photo_url ) : ?>
-                    <div class="src-review-photo">
-                        <img src="<?php echo esc_url( $review->photo_url ); ?>" alt="Review photo">
+        <?php if ( $atts['layout'] === 'carousel' ) : ?>
+            <button class="src-carousel-prev">‹</button>
+        <?php endif; ?>
+        
+        <div class="src-reviews-wrapper">
+            <?php foreach ( $reviews as $review ) : ?>
+                <div class="src-review-card">
+                    <?php if ( $review->photo_url ) : ?>
+                        <div class="src-review-photo">
+                            <img src="<?php echo esc_url( $review->photo_url ); ?>" alt="Review photo">
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="src-review-header">
+                        <div class="src-reviewer-name"><?php echo esc_html( $review->reviewer_name ); ?></div>
+                        <div class="src-review-rating"><?php echo src_render_stars( $review->rating ); ?></div>
+                        <div class="src-review-date"><?php echo date( 'F j, Y', strtotime( $review->created_at ) ); ?></div>
                     </div>
-                <?php endif; ?>
-                
-                <div class="src-review-header">
-                    <div class="src-reviewer-name"><?php echo esc_html( $review->reviewer_name ); ?></div>
-                    <div class="src-review-rating"><?php echo src_render_stars( $review->rating ); ?></div>
-                    <div class="src-review-date"><?php echo date( 'F j, Y', strtotime( $review->created_at ) ); ?></div>
+                    
+                    <div class="src-review-text">
+                        <?php echo nl2br( esc_html( $review->review_text ) ); ?>
+                    </div>
                 </div>
-                
-                <div class="src-review-text">
-                    <?php echo nl2br( esc_html( $review->review_text ) ); ?>
-                </div>
-            </div>
-        <?php endforeach; ?>
+            <?php endforeach; ?>
+        </div>
+        
+        <?php if ( $atts['layout'] === 'carousel' ) : ?>
+            <button class="src-carousel-next">›</button>
+        <?php endif; ?>
     </div>
     <?php
 }
@@ -236,6 +312,7 @@ function src_submit_review() {
     // Handle photo upload
     $photo_url = null;
     if ( ! empty( $_FILES['review_photo']['name'] ) ) {
+        require_once( ABSPATH . 'wp-admin/includes/file.php' );
         $upload = wp_handle_upload( $_FILES['review_photo'], array( 'test_form' => false ) );
         if ( ! isset( $upload['error'] ) ) {
             $photo_url = $upload['url'];
@@ -252,7 +329,7 @@ function src_submit_review() {
             'review_text' => $review_text,
             'photo_url' => $photo_url,
             'reviewer_ip' => $reviewer_ip,
-            'status' => 'pending' // Requires admin approval
+            'status' => 'pending'
         ),
         array( '%d', '%s', '%d', '%s', '%s', '%s', '%s' )
     );
@@ -295,7 +372,7 @@ function src_admin_page() {
     $table_name = $wpdb->prefix . 'review_collector';
     
     // Handle actions
-    if ( isset( $_GET['action'] ) && isset( $_GET['review_id'] ) ) {
+    if ( isset( $_GET['action'] ) && isset( $_GET['review_id'] ) && check_admin_referer( 'src_admin_action' ) ) {
         $review_id = intval( $_GET['review_id'] );
         
         if ( $_GET['action'] === 'approve' ) {
@@ -312,6 +389,8 @@ function src_admin_page() {
     $where = ( $status_filter !== 'all' ) ? $wpdb->prepare( "WHERE status = %s", $status_filter ) : '';
     
     $reviews = $wpdb->get_results( "SELECT * FROM $table_name $where ORDER BY created_at DESC" );
+    
+    $nonce = wp_create_nonce( 'src_admin_action' );
     
     ?>
     <div class="wrap">
@@ -356,10 +435,10 @@ function src_admin_page() {
                             <td><?php echo date( 'M j, Y', strtotime( $review->created_at ) ); ?></td>
                             <td>
                                 <?php if ( $review->status === 'pending' ) : ?>
-                                    <a href="?page=review-collector&action=approve&review_id=<?php echo $review->id; ?>" class="button button-small">Approve</a>
-                                    <a href="?page=review-collector&action=reject&review_id=<?php echo $review->id; ?>" class="button button-small">Reject</a>
+                                    <a href="?page=review-collector&action=approve&review_id=<?php echo $review->id; ?>&_wpnonce=<?php echo $nonce; ?>" class="button button-small">Approve</a>
+                                    <a href="?page=review-collector&action=reject&review_id=<?php echo $review->id; ?>&_wpnonce=<?php echo $nonce; ?>" class="button button-small">Reject</a>
                                 <?php endif; ?>
-                                <a href="?page=review-collector&action=delete&review_id=<?php echo $review->id; ?>" class="button button-small" onclick="return confirm('Delete this review?')">Delete</a>
+                                <a href="?page=review-collector&action=delete&review_id=<?php echo $review->id; ?>&_wpnonce=<?php echo $nonce; ?>" class="button button-small" onclick="return confirm('Delete this review?')">Delete</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

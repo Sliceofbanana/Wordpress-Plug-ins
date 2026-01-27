@@ -84,6 +84,73 @@
     cursor: not-allowed;
 }
 
+/* Open Popup Button */
+.src-open-popup-btn {
+    background: #0073aa;
+    color: white;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 25px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(0,115,170,0.3);
+}
+
+.src-open-popup-btn:hover {
+    background: #005177;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,115,170,0.4);
+}
+
+/* Popup Modal */
+.src-popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.src-popup-overlay.active {
+    display: flex;
+}
+
+.src-popup-content {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+}
+
+.src-popup-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 36px;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+}
+
+.src-popup-close:hover {
+    color: #333;
+}
+
 /* Messages */
 .src-message {
     margin-top: 15px;
@@ -137,19 +204,124 @@
     font-size: 14px;
 }
 
-/* Reviews Container */
+/* Reviews Container - Card Layout */
 .src-reviews-container {
     margin: 30px 0;
+}
+
+.src-layout-card .src-reviews-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .src-layout-card .src-review-card {
     background: white;
     padding: 20px;
-    margin-bottom: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+/* Reviews Container - Carousel Layout */
+.src-layout-carousel {
+    position: relative;
+    padding: 0 60px;
+}
+
+.src-layout-carousel .src-reviews-wrapper {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 20px;
+    padding: 10px 0;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.src-layout-carousel .src-reviews-wrapper::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.src-layout-carousel .src-review-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    min-width: 350px;
+    max-width: 350px;
+    flex-shrink: 0;
+    transition: transform 0.3s;
+}
+
+.src-layout-carousel .src-review-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* Carousel Navigation Buttons */
+.src-carousel-prev,
+.src-carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #0073aa;
+    color: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.src-carousel-prev:hover,
+.src-carousel-next:hover {
+    background: #005177;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.src-carousel-prev {
+    left: 0;
+}
+
+.src-carousel-next {
+    right: 0;
+}
+
+/* Popup Layout - Similar to Carousel */
+.src-layout-popup {
+    position: relative;
+    padding: 0 60px;
+}
+
+.src-layout-popup .src-reviews-wrapper {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 20px;
+    padding: 10px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.src-layout-popup .src-reviews-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.src-layout-popup .src-review-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    min-width: 350px;
+    max-width: 350px;
+    flex-shrink: 0;
+}
+
+/* Review Card Content */
 .src-review-photo {
     margin-bottom: 15px;
 }
@@ -195,11 +367,30 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-    .src-review-form-wrapper {
+    .src-review-form-wrapper,
+    .src-popup-content {
         padding: 20px;
     }
     
     .src-rating-number {
         font-size: 36px;
+    }
+    
+    .src-layout-carousel,
+    .src-layout-popup {
+        padding: 0 40px;
+    }
+    
+    .src-carousel-prev,
+    .src-carousel-next {
+        width: 40px;
+        height: 40px;
+        font-size: 22px;
+    }
+    
+    .src-layout-carousel .src-review-card,
+    .src-layout-popup .src-review-card {
+        min-width: 280px;
+        max-width: 280px;
     }
 }
