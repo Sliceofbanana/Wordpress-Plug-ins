@@ -40,8 +40,8 @@ function src_create_table() {
 // ✅ Enqueue styles and scripts
 add_action( 'wp_enqueue_scripts', 'src_enqueue_assets' );
 function src_enqueue_assets() {
-    wp_enqueue_style( 'src-style', plugins_url( 'assets/css/style.css', __FILE__ ), array(), '1.0' );
-    wp_enqueue_script( 'src-script', plugins_url( 'assets/js/script.js', __FILE__ ), array('jquery'), '1.0', true );
+    wp_enqueue_style( 'src-style', plugins_url( 'assets/css/style.css', __FILE__ ), array(), '2.0' );
+    wp_enqueue_script( 'src-script', plugins_url( 'assets/js/script.js', __FILE__ ), array('jquery'), '2.0', true );
     
     wp_localize_script( 'src-script', 'srcAjax', array(
         'ajaxurl' => admin_url( 'admin-ajax.php' ),
@@ -53,7 +53,7 @@ function src_enqueue_assets() {
 add_shortcode( 'review_form', 'src_form_shortcode' );
 function src_form_shortcode( $atts ) {
     $atts = shortcode_atts( array(
-        'layout' => 'card', // card, carousel, or popup
+        'layout' => 'card', // card or carousel
         'show_form' => 'yes',
         'order' => 'newest', // newest or highest
         'per_page' => 10,
@@ -65,77 +65,15 @@ function src_form_shortcode( $atts ) {
     // Get current page ID
     $page_id = get_the_ID();
     
-    // Display button for popup layout
-    if ( $atts['layout'] === 'popup' || $atts['layout'] === 'carousel' ) {
-        if ( $atts['show_form'] === 'yes' ) {
-            echo '<button class="src-open-popup-btn">' . esc_html( $atts['button_text'] ) . '</button>';
-        }
-    }
-    
-    // Display reviews
+    // Display reviews (button is now inside the stats section)
     src_display_reviews( $page_id, $atts );
     
-    // Display form based on layout
+    // Always display popup form if form is enabled
     if ( $atts['show_form'] === 'yes' ) {
-        if ( $atts['layout'] === 'popup' || $atts['layout'] === 'carousel' ) {
-            src_display_popup_form( $page_id );
-        } else {
-            src_display_form( $page_id );
-        }
+        src_display_popup_form( $page_id );
     }
     
     return ob_get_clean();
-}
-
-// ✅ Display inline review form
-function src_display_form( $page_id ) {
-    ?>
-    <div class="src-review-form-wrapper">
-        <h3>Leave a Review</h3>
-        <form id="src-review-form" class="src-review-form" enctype="multipart/form-data">
-            <input type="hidden" name="page_id" value="<?php echo esc_attr( $page_id ); ?>">
-            <input type="hidden" name="action" value="src_submit_review">
-            <input type="hidden" name="nonce" value="<?php echo wp_create_nonce( 'src_nonce' ); ?>">
-            
-            <!-- Honeypot for spam protection -->
-            <input type="text" name="website" style="display:none;">
-            
-            <div class="src-form-group">
-                <label for="reviewer_name">Your Name *</label>
-                <input type="text" id="reviewer_name" name="reviewer_name" required>
-            </div>
-            
-            <div class="src-form-group">
-                <label>Your Rating *</label>
-                <div class="src-star-rating">
-                    <input type="radio" id="star5" name="rating" value="5" required>
-                    <label for="star5">★</label>
-                    <input type="radio" id="star4" name="rating" value="4">
-                    <label for="star4">★</label>
-                    <input type="radio" id="star3" name="rating" value="3">
-                    <label for="star3">★</label>
-                    <input type="radio" id="star2" name="rating" value="2">
-                    <label for="star2">★</label>
-                    <input type="radio" id="star1" name="rating" value="1">
-                    <label for="star1">★</label>
-                </div>
-            </div>
-            
-            <div class="src-form-group">
-                <label for="review_text">Your Review *</label>
-                <textarea id="review_text" name="review_text" rows="5" required></textarea>
-            </div>
-            
-            <div class="src-form-group">
-                <label for="review_photo">Add Photo (Optional)</label>
-                <input type="file" id="review_photo" name="review_photo" accept="image/*">
-            </div>
-            
-            <button type="submit" class="src-submit-btn">Submit Review</button>
-            <div class="src-message"></div>
-        </form>
-    </div>
-    <?php
 }
 
 // ✅ Display popup review form
@@ -223,13 +161,16 @@ function src_display_reviews( $page_id, $atts ) {
         return;
     }
     
-    // Display stats
+    // Display stats with button inline
     ?>
     <div class="src-review-stats">
         <div class="src-average-rating">
             <span class="src-rating-number"><?php echo number_format( $stats->average, 1 ); ?></span>
             <div class="src-stars"><?php echo src_render_stars( $stats->average ); ?></div>
             <span class="src-total-reviews"><?php echo $stats->total; ?> <?php echo $stats->total == 1 ? 'review' : 'reviews'; ?></span>
+            <?php if ( $atts['show_form'] === 'yes' ) : ?>
+                <button class="src-open-popup-btn"><?php echo esc_html( $atts['button_text'] ); ?></button>
+            <?php endif; ?>
         </div>
     </div>
     
@@ -241,21 +182,25 @@ function src_display_reviews( $page_id, $atts ) {
         <div class="src-reviews-wrapper">
             <?php foreach ( $reviews as $review ) : ?>
                 <div class="src-review-card">
+                    <div class="src-review-header">
+                        <div class="src-reviewer-icon">
+                            <?php echo strtoupper( substr( $review->reviewer_name, 0, 1 ) ); ?>
+                        </div>
+                        <div class="src-reviewer-name"><?php echo esc_html( $review->reviewer_name ); ?></div>
+                        <div class="src-review-rating"><?php echo src_render_stars( $review->rating ); ?></div>
+                    </div>
+                    
+                    <div class="src-review-text">
+                        <?php echo nl2br( esc_html( $review->review_text ) ); ?>
+                    </div>
+                    
                     <?php if ( $review->photo_url ) : ?>
                         <div class="src-review-photo">
                             <img src="<?php echo esc_url( $review->photo_url ); ?>" alt="Review photo">
                         </div>
                     <?php endif; ?>
                     
-                    <div class="src-review-header">
-                        <div class="src-reviewer-name"><?php echo esc_html( $review->reviewer_name ); ?></div>
-                        <div class="src-review-rating"><?php echo src_render_stars( $review->rating ); ?></div>
-                        <div class="src-review-date"><?php echo date( 'F j, Y', strtotime( $review->created_at ) ); ?></div>
-                    </div>
-                    
-                    <div class="src-review-text">
-                        <?php echo nl2br( esc_html( $review->review_text ) ); ?>
-                    </div>
+                    <div class="src-review-date"><?php echo date( 'M j, Y', strtotime( $review->created_at ) ); ?></div>
                 </div>
             <?php endforeach; ?>
         </div>
