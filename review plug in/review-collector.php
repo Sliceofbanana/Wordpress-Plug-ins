@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// ✅ Create database table on activation
+// Create database table on activation
 register_activation_hook( __FILE__, 'src_create_table' );
 function src_create_table() {
     global $wpdb;
@@ -53,9 +53,9 @@ function src_enqueue_assets() {
 add_shortcode( 'review_form', 'src_form_shortcode' );
 function src_form_shortcode( $atts ) {
     $atts = shortcode_atts( array(
-        'layout' => 'card', // card or carousel
+        'layout' => 'card',
         'show_form' => 'yes',
-        'order' => 'newest', // newest or highest
+        'order' => 'newest',
         'per_page' => 10,
         'button_text' => 'Leave a Review'
     ), $atts );

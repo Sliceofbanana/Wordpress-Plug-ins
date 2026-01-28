@@ -84,7 +84,6 @@
     cursor: not-allowed;
 }
 
-/* Open Popup Button - Now styled to match the design */
 .src-open-popup-btn {
     background: #FF8C42;
     color: white;
@@ -249,8 +248,8 @@
     scroll-behavior: smooth;
     gap: 20px;
     padding: 10px 0;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .src-layout-carousel .src-reviews-wrapper::-webkit-scrollbar {
