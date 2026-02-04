@@ -1,0 +1,12 @@
+{
+    "name": "quote-generator/quote-generator",
+    "description": "WordPress Quote Generator Plugin",
+    "type": "wordpress-plugin",
+    "require": {
+        "php": ">=7.4",
+        "dompdf/dompdf": "^2.0"
+    },
+    "autoload": {
+        "classmap": ["includes/"]
+    }
+}
