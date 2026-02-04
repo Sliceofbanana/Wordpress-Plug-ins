@@ -1,4 +1,5 @@
 <?php
+// filepath: c:\XAMPP\htdocs\mqprinting\wp-content\plugins\quote-generator\includes\class-shortcode.php
 if (!defined('ABSPATH')) exit;
 
 add_shortcode('quote_generator', function () {
@@ -11,6 +12,11 @@ add_shortcode('quote_generator', function () {
         WHERE status = 'active' 
         ORDER BY category, product_name ASC
     ");
+    
+    // Check if products exist
+    if (empty($products)) {
+        return '<div class="eqg-no-products-message"><p>' . __('No products available at the moment. Please check back later or contact us directly.', 'eqg') . '</p></div>';
+    }
     
     // Group products by category
     $grouped_products = [];
@@ -25,39 +31,50 @@ add_shortcode('quote_generator', function () {
     ob_start(); 
     ?>
     <div class="eqg-quote-builder-wrapper">
+        <div class="eqg-quote-header">
+            <h2><?php _e('Build Your Quote', 'eqg'); ?></h2>
+            <p><?php _e('Select products and services, adjust quantities, and generate your customized quote.', 'eqg'); ?></p>
+        </div>
+        
         <form id="eqg-quote-form" class="eqg-quote-form">
             <?php wp_nonce_field('eqg_ajax_nonce', 'eqg_nonce'); ?>
             
-            <!-- Customer Information -->
-            <div class="eqg-section">
+            <!-- Customer Information Section -->
+            <div class="eqg-section eqg-customer-section">
                 <h3><?php _e('Customer Information', 'eqg'); ?></h3>
                 
-                <div class="eqg-form-row">
-                    <label for="eqg-name"><?php _e('Your Name', 'eqg'); ?> <span class="required">*</span></label>
-                    <input type="text" id="eqg-name" name="name" placeholder="<?php esc_attr_e('Enter your name', 'eqg'); ?>" required>
-                </div>
-                
-                <div class="eqg-form-row">
-                    <label for="eqg-email"><?php _e('Email', 'eqg'); ?> <span class="required">*</span></label>
-                    <input type="email" id="eqg-email" name="email" placeholder="<?php esc_attr_e('your@email.com', 'eqg'); ?>" required>
+                <div class="eqg-form-grid">
+                    <div class="eqg-form-row">
+                        <label for="eqg-name"><?php _e('Full Name', 'eqg'); ?> <span class="required">*</span></label>
+                        <input type="text" id="eqg-name" name="name" placeholder="<?php esc_attr_e('e.g., John Doe', 'eqg'); ?>" required>
+                    </div>
+                    
+                    <div class="eqg-form-row">
+                        <label for="eqg-email"><?php _e('Email Address', 'eqg'); ?> <span class="required">*</span></label>
+                        <input type="email" id="eqg-email" name="email" placeholder="<?php esc_attr_e('your@email.com', 'eqg'); ?>" required>
+                    </div>
                 </div>
             </div>
             
-            <!-- Product Builder -->
-            <div class="eqg-section">
-                <h3><?php _e('Build Your Quote', 'eqg'); ?></h3>
+            <!-- Product Builder Section -->
+            <div class="eqg-section eqg-builder-section">
+                <h3><?php _e('Select Products & Services', 'eqg'); ?></h3>
                 
                 <div class="eqg-builder-container">
                     <!-- Available Products Sidebar -->
                     <div class="eqg-products-sidebar">
-                        <div class="eqg-search-box">
-                            <input type="text" id="eqg-product-search" placeholder="<?php esc_attr_e('Search products...', 'eqg'); ?>">
+                        <div class="eqg-sidebar-header">
+                            <h4><?php _e('Available Products', 'eqg'); ?></h4>
+                            <div class="eqg-search-box">
+                                <span class="dashicons dashicons-search"></span>
+                                <input type="text" id="eqg-product-search" placeholder="<?php esc_attr_e('Search...', 'eqg'); ?>">
+                            </div>
                         </div>
                         
                         <div class="eqg-products-list">
                             <?php foreach ($grouped_products as $category => $category_products): ?>
                                 <div class="eqg-category-group">
-                                    <h4><?php echo esc_html($category); ?></h4>
+                                    <h5 class="eqg-category-title"><?php echo esc_html($category); ?></h5>
                                     <div class="eqg-category-products">
                                         <?php foreach ($category_products as $product): ?>
                                             <div class="eqg-product-card" 
@@ -66,8 +83,11 @@ add_shortcode('quote_generator', function () {
                                                  data-price="<?php echo esc_attr($product->price); ?>"
                                                  data-description="<?php echo esc_attr($product->description); ?>">
                                                 <div class="eqg-product-info">
-                                                    <strong><?php echo esc_html($product->product_name); ?></strong>
-                                                    <span class="eqg-product-price">₱<?php echo number_format($product->price, 2); ?></span>
+                                                    <div class="eqg-product-name"><?php echo esc_html($product->product_name); ?></div>
+                                                    <?php if ($product->description): ?>
+                                                        <div class="eqg-product-desc"><?php echo esc_html(wp_trim_words($product->description, 8)); ?></div>
+                                                    <?php endif; ?>
+                                                    <div class="eqg-product-price">₱<?php echo number_format($product->price, 2); ?></div>
                                                 </div>
                                                 <button type="button" class="eqg-add-product-btn" title="<?php _e('Add to quote', 'eqg'); ?>">
                                                     <span class="dashicons dashicons-plus-alt"></span>
@@ -77,46 +97,65 @@ add_shortcode('quote_generator', function () {
                                     </div>
                                 </div>
                             <?php endforeach; ?>
-                            
-                            <?php if (empty($grouped_products)): ?>
-                                <p class="eqg-no-products"><?php _e('No products available. Please contact admin.', 'eqg'); ?></p>
-                            <?php endif; ?>
                         </div>
                         
                         <!-- Request Custom Product Button -->
                         <button type="button" id="eqg-request-custom" class="eqg-request-custom-btn">
-                            <span class="dashicons dashicons-admin-generic"></span>
-                            <?php _e('Request Custom Product', 'eqg'); ?>
+                            <span class="dashicons dashicons-lightbulb"></span>
+                            <?php _e('Need Something Custom?', 'eqg'); ?>
                         </button>
                     </div>
                     
-                    <!-- Selected Products Area -->
+                    <!-- Selected Products Area (Quote Table) -->
                     <div class="eqg-selected-products">
-                        <h4><?php _e('Selected Products/Services', 'eqg'); ?></h4>
+                        <div class="eqg-cart-header">
+                            <h4><?php _e('Your Quote', 'eqg'); ?></h4>
+                        </div>
                         
-                        <div id="eqg-cart-items" class="eqg-cart-items">
-                            <div class="eqg-empty-cart">
-                                <span class="dashicons dashicons-cart"></span>
-                                <p><?php _e('Drag or click to add products to your quote', 'eqg'); ?></p>
-                            </div>
+                        <div class="eqg-cart-table-container">
+                            <table class="eqg-cart-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-drag"></th>
+                                        <th class="col-item"><?php _e('Item Details', 'eqg'); ?></th>
+                                        <th class="col-qty"><?php _e('QTY', 'eqg'); ?></th>
+                                        <th class="col-price"><?php _e('Unit Price', 'eqg'); ?></th>
+                                        <th class="col-total"><?php _e('Total', 'eqg'); ?></th>
+                                        <th class="col-remove"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="eqg-cart-items">
+                                    <tr class="eqg-empty-cart-row">
+                                        <td colspan="6" class="eqg-empty-cart">
+                                            <span class="dashicons dashicons-cart"></span>
+                                            <p><?php _e('Click the + button or drag products here to build your quote', 'eqg'); ?></p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                         
                         <!-- Quote Summary -->
                         <div class="eqg-quote-summary">
-                            <div class="eqg-summary-row">
-                                <span><?php _e('Subtotal:', 'eqg'); ?></span>
-                                <strong id="eqg-subtotal">₱0.00</strong>
+                            <div class="eqg-summary-rows">
+                                <div class="eqg-summary-row">
+                                    <span><?php _e('Subtotal:', 'eqg'); ?></span>
+                                    <strong id="eqg-subtotal">₱0.00</strong>
+                                </div>
+                                <div class="eqg-summary-row eqg-total-row">
+                                    <span><?php _e('Grand Total:', 'eqg'); ?></span>
+                                    <strong id="eqg-total">₱0.00</strong>
+                                </div>
                             </div>
-                            <div class="eqg-summary-row eqg-total-row">
-                                <span><?php _e('Total:', 'eqg'); ?></span>
-                                <strong id="eqg-total">₱0.00</strong>
-                            </div>
+                            
+                            <button type="submit" class="eqg-submit-btn" disabled>
+                                <span class="dashicons dashicons-pdf"></span>
+                                <span class="eqg-btn-text"><?php _e('Generate PDF / Print', 'eqg'); ?></span>
+                                <span class="eqg-btn-loading" style="display:none;"><?php _e('Generating...', 'eqg'); ?></span>
+                            </button>
+                            
+                            <p class="eqg-quote-validity"><?php _e('Quotation is valid for 30 days from today.', 'eqg'); ?></p>
                         </div>
-                        
-                        <button type="submit" class="eqg-submit-btn" disabled>
-                            <span class="eqg-btn-text"><?php _e('Generate Quote', 'eqg'); ?></span>
-                            <span class="eqg-btn-loading" style="display:none;"><?php _e('Processing...', 'eqg'); ?></span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -129,22 +168,29 @@ add_shortcode('quote_generator', function () {
             <div class="eqg-modal-content">
                 <span class="eqg-modal-close">&times;</span>
                 <h3><?php _e('Request Custom Product/Service', 'eqg'); ?></h3>
-                <p><?php _e('Describe the product or service you need. Admin will review and add it with pricing.', 'eqg'); ?></p>
+                <p><?php _e('Can\'t find what you need? Describe your requirements and we\'ll add it with pricing.', 'eqg'); ?></p>
                 
                 <form id="eqg-custom-product-form">
                     <div class="eqg-form-row">
                         <label><?php _e('Product/Service Name', 'eqg'); ?> <span class="required">*</span></label>
-                        <input type="text" id="eqg-custom-name" required>
+                        <input type="text" id="eqg-custom-name" placeholder="<?php esc_attr_e('e.g., Custom Banner 10ft x 20ft', 'eqg'); ?>" required>
                     </div>
                     <div class="eqg-form-row">
-                        <label><?php _e('Description', 'eqg'); ?></label>
-                        <textarea id="eqg-custom-description" rows="4" placeholder="<?php esc_attr_e('Provide details about what you need...', 'eqg'); ?>"></textarea>
+                        <label><?php _e('Description & Requirements', 'eqg'); ?></label>
+                        <textarea id="eqg-custom-description" rows="4" placeholder="<?php esc_attr_e('Please provide details about specifications, materials, quantity, etc.', 'eqg'); ?>"></textarea>
                     </div>
                     <div class="eqg-form-row">
                         <label><?php _e('Category', 'eqg'); ?></label>
-                        <input type="text" id="eqg-custom-category" placeholder="<?php esc_attr_e('e.g., Printing, Design', 'eqg'); ?>">
+                        <input type="text" id="eqg-custom-category" placeholder="<?php esc_attr_e('e.g., Printing, Design, Marketing', 'eqg'); ?>">
                     </div>
-                    <button type="submit" class="eqg-submit-btn"><?php _e('Submit Request', 'eqg'); ?></button>
+                    <div class="eqg-modal-actions">
+                        <button type="button" class="eqg-btn-secondary" onclick="jQuery('#eqg-custom-product-modal').fadeOut();">
+                            <?php _e('Cancel', 'eqg'); ?>
+                        </button>
+                        <button type="submit" class="eqg-submit-btn">
+                            <?php _e('Submit Request', 'eqg'); ?>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

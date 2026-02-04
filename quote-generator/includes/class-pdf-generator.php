@@ -81,12 +81,12 @@ class EQG_PDF_Generator {
                     margin: 40px;
                 }
                 h1 { 
-                    color: <?php echo esc_attr(get_theme_mod('primary_color', '#000')); ?>; 
+                    color: #2c3e50;
                     font-size: 32px;
                     margin-bottom: 10px;
                 }
                 .header {
-                    border-bottom: 3px solid <?php echo esc_attr(get_theme_mod('primary_color', '#000')); ?>;
+                    border-bottom: 3px solid #3498db;
                     padding-bottom: 20px;
                     margin-bottom: 30px;
                 }
@@ -123,8 +123,12 @@ class EQG_PDF_Generator {
                     border-bottom: 1px solid #ddd;
                 }
                 .services th {
-                    background: #f4f4f4;
+                    background: #3498db;
+                    color: #fff;
                     font-weight: bold;
+                }
+                .services .text-right {
+                    text-align: right;
                 }
                 .total { 
                     font-size: 20px; 
@@ -175,25 +179,31 @@ class EQG_PDF_Generator {
             </div>
             
             <div class="services">
-                <h3><?php _e('Services', 'eqg'); ?></h3>
+                <h3><?php _e('Products & Services', 'eqg'); ?></h3>
                 <table>
                     <thead>
                         <tr>
-                            <th><?php _e('Description', 'eqg'); ?></th>
-                            <th style="text-align: right;"><?php _e('Amount', 'eqg'); ?></th>
+                            <th><?php _e('Item', 'eqg'); ?></th>
+                            <th class="text-right"><?php _e('Quantity', 'eqg'); ?></th>
+                            <th class="text-right"><?php _e('Unit Price', 'eqg'); ?></th>
+                            <th class="text-right"><?php _e('Total', 'eqg'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><?php echo esc_html($data['service']); ?></td>
-                            <td style="text-align: right;">₱<?php echo number_format($data['amount'], 2); ?></td>
-                        </tr>
+                        <?php foreach ($data['cart_items'] as $item): ?>
+                            <tr>
+                                <td><?php echo esc_html($item['name']); ?></td>
+                                <td class="text-right"><?php echo esc_html($item['quantity']); ?></td>
+                                <td class="text-right">₱<?php echo number_format($item['price'], 2); ?></td>
+                                <td class="text-right">₱<?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
             
             <div class="total">
-                <?php _e('Total Amount:', 'eqg'); ?> ₱<?php echo number_format($data['amount'], 2); ?>
+                <?php _e('Total Amount:', 'eqg'); ?> ₱<?php echo number_format($data['total'], 2); ?>
             </div>
             
             <div class="footer">

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Elementor Quote Generator
  * Description: Generate downloadable PDF quotations via Elementor popup or shortcode with drag-and-drop products.
- * Version: 2.0.0
+ * Version: 2.5.0
  * Text Domain: eqg
  * Domain Path: /languages
  * Author: Genesis Jr
@@ -82,9 +82,26 @@ function eqg_create_tables() {
 
 // Enqueue styles and scripts
 add_action('wp_enqueue_scripts', function() {
-    wp_enqueue_style('eqg-styles', EQG_URL . 'assets/css/style.css', [], EQG_VERSION);
-    wp_enqueue_script('eqg-script', EQG_URL . 'assets/js/script.js', ['jquery', 'jquery-ui-sortable'], EQG_VERSION, true);
+    // Enqueue WordPress dashicons
+    wp_enqueue_style('dashicons');
     
+    // Enqueue plugin styles
+    wp_enqueue_style('eqg-styles', EQG_URL . 'assets/css/style.css', [], EQG_VERSION);
+    
+    // Enqueue jQuery UI with draggable, droppable, and sortable
+    wp_enqueue_script('jquery-ui-draggable');
+    wp_enqueue_script('jquery-ui-droppable');
+    wp_enqueue_script('jquery-ui-sortable');
+    
+    // Enqueue plugin script
+    wp_enqueue_script('eqg-script', EQG_URL . 'assets/js/script.js', [
+        'jquery', 
+        'jquery-ui-draggable', 
+        'jquery-ui-droppable', 
+        'jquery-ui-sortable'
+    ], EQG_VERSION, true);
+    
+    // Localize script with AJAX data
     wp_localize_script('eqg-script', 'eqgAjax', [
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eqg_ajax_nonce')
